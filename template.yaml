@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  CalculatorFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: lambda.lambda_handler  # Points to the handler function in lambda.py
+      Runtime: python3.8            # Lambda runtime (Python 3.8)
+      MemorySize: 128               # Memory allocation for Lambda
+      Timeout: 100                  # Timeout in seconds for Lambda function execution
+      CodeUri: s3://my-calculator-code/calculator.zip.zip  # Your uploaded ZIP file in S3 bucket
+      Events:
+        CalculateAPI:
+          Type: Api
+          Properties:
+            Path: /calculate
+            Method: get
