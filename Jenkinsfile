@@ -19,8 +19,8 @@ pipeline {
         stage('Run Unit Tests (Docker)') {
             steps {
                 bat """
-                docker run --rm -v %WORKSPACE%:/app -w /app python:3.12 \
-                    bash -c "pip install pytest && pytest tests/ --junitxml=results.xml"
+                docker run --rm -v %WORKSPACE%:/app -w /app python:3.12 ^
+                bash -c "pip install pytest && export PYTHONPATH=/app && pytest tests/ --junitxml=results.xml"
                 """
             }
             post {
