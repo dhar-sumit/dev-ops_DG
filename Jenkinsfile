@@ -34,7 +34,7 @@ pipeline {
             steps {
                 bat """
                 docker run --rm -v %WORKSPACE%:/app -w /app %SAM_IMAGE% \
-                    sam build --use-container
+                    sam build
                 """
             }
         }
