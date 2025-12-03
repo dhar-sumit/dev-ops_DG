@@ -48,7 +48,7 @@ pipeline {
                         -e AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY% \
                         -e AWS_REGION=%AWS_REGION% \
                         %SAM_IMAGE% \
-                        sam deploy --stack-name %STACK_NAME% --capabilities CAPABILITY_IAM --region %AWS_REGION% --no-confirm-changeset
+                        sam deploy --no-confirm-changeset
                     """
                 }
             }
