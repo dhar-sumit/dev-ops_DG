@@ -1,15 +1,11 @@
 pipeline {
-    agent {
-        docker {
-            image 'amazon/aws-sam-cli-build-image-python3.12'
-            args '-v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:$WORKSPACE'
-        }
-    }
+    agent any
 
     environment {
         AWS_REGION = 'ap-south-2'
         AWS_CREDENTIALS_ID = 'aws-calculator'
         STACK_NAME = 'calculator-stack'
+        SAM_IMAGE = 'public.ecr.aws/sam/build-python3.12:latest'
     }
 
     stages {
@@ -20,16 +16,12 @@ pipeline {
             }
         }
 
-        stage('Install dependencies') {
+        stage('Run Unit Tests (Docker)') {
             steps {
-                sh 'python -m pip install --upgrade pip'
-                sh 'if [ -f requirements.txt ]; then pip install -r requirements.txt; else echo "No requirements.txt found"; fi'
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                sh 'pytest tests/ --junitxml=results.xml'
+                bat """
+                docker run --rm -v %WORKSPACE%:/app -w /app python:3.12 \
+                    bash -c "pip install pytest && pytest tests/ --junitxml=results.xml"
+                """
             }
             post {
                 always {
@@ -38,16 +30,26 @@ pipeline {
             }
         }
 
-        stage('Build SAM package') {
+        stage('Build SAM package (Docker)') {
             steps {
-                sh 'sam build'
+                bat """
+                docker run --rm -v %WORKSPACE%:/app -w /app %SAM_IMAGE% \
+                    sam build --use-container
+                """
             }
         }
 
-        stage('Deploy to AWS') {
+        stage('Deploy to AWS (Docker)') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS_ID]]) {
-                    sh 'sam deploy --stack-name $STACK_NAME --capabilities CAPABILITY_IAM --region $AWS_REGION --no-confirm-changeset'
+                    bat """
+                    docker run --rm -v %WORKSPACE%:/app -w /app \
+                        -e AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID% \
+                        -e AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY% \
+                        -e AWS_REGION=%AWS_REGION% \
+                        %SAM_IMAGE% \
+                        sam deploy --stack-name %STACK_NAME% --capabilities CAPABILITY_IAM --region %AWS_REGION% --no-confirm-changeset
+                    """
                 }
             }
         }
